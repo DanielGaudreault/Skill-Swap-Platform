@@ -709,384 +709,400 @@
     </main>
 
     <script>
-        // Data storage
-        let users = JSON.parse(localStorage.getItem('skillSwapUsers')) || [];
-        let currentUser = null;
-        let allSkills = ['Web Design', 'Spanish', 'Guitar', 'Photography', 'Cooking', 'Graphic Design', 'Yoga', 'SEO', 'Marketing', 'Python'];
+    // Data storage
+    let users = JSON.parse(localStorage.getItem('skillSwapUsers')) || [];
+    let currentUser = null;
+    let allSkills = ['Web Design', 'Spanish', 'Guitar', 'Photography', 'Cooking', 'Graphic Design', 'Yoga', 'SEO', 'Marketing', 'Python'];
 
-        // DOM Elements
-        const homeBtn = document.getElementById('homeBtn');
-        const loginBtn = document.getElementById('loginBtn');
-        const registerBtn = document.getElementById('registerBtn');
-        const profileBtn = document.getElementById('profileBtn');
-        const dashboardBtn = document.getElementById('dashboardBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const profileSection = document.getElementById('profileSection');
-        const dashboardSection = document.getElementById('dashboardSection');
-        const browseSection = document.getElementById('browseSection');
-        const showRegister = document.getElementById('showRegister');
-        const showLogin = document.getElementById('showLogin');
-        const editProfileBtn = document.getElementById('editProfileBtn');
-        const saveProfileBtn = document.getElementById('saveProfileBtn');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-        const viewProfileContent = document.getElementById('viewProfileContent');
-        const editProfileContent = document.getElementById('editProfileContent');
+    // DOM Elements
+    const homeBtn = document.getElementById('homeBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const profileBtn = document.getElementById('profileBtn');
+    const dashboardBtn = document.getElementById('dashboardBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const profileSection = document.getElementById('profileSection');
+    const dashboardSection = document.getElementById('dashboardSection');
+    const browseSection = document.getElementById('browseSection');
+    const showRegister = document.getElementById('showRegister');
+    const showLogin = document.getElementById('showLogin');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const viewProfileContent = document.getElementById('viewProfileContent');
+    const editProfileContent = document.getElementById('editProfileContent');
 
-        // Initialize the app
-        function init() {
-            // Check if user is already logged in
-            const loggedInUserId = localStorage.getItem('loggedInUserId');
-            if (loggedInUserId) {
-                currentUser = users.find(u => u.id === loggedInUserId);
-                if (currentUser) {
-                    updateUIForLoggedInUser();
-                    showDashboard(); // Default to dashboard after login
-                }
-            }
-            
-            // Set up demo data if no users exist
-            if (users.length === 0) {
-                setupDemoData();
-            }
-        }
-
-        // Set up some demo users
-        function setupDemoData() {
-            const demoUsers = [
-                {
-                    id: '1',
-                    name: 'Alex Johnson',
-                    email: 'alex@example.com',
-                    password: 'password123',
-                    skillsOffered: ['Web Design', 'JavaScript', 'SEO'],
-                    skillsWanted: ['Guitar', 'Spanish'],
-                    location: 'New York, USA',
-                    bio: 'Web developer looking to learn guitar and improve my Spanish.',
-                    availability: 'weekends',
-                    rating: 4.7,
-                    swapsCompleted: 8
-                },
-                {
-                    id: '2',
-                    name: 'Maria Garcia',
-                    email: 'maria@example.com',
-                    password: 'password123',
-                    skillsOffered: ['Spanish', 'Cooking', 'Yoga'],
-                    skillsWanted: ['Graphic Design', 'Photography'],
-                    location: 'Miami, USA',
-                    bio: 'Native Spanish speaker and yoga instructor. Love to cook!',
-                    availability: 'evenings',
-                    rating: 4.9,
-                    swapsCompleted: 12
-                },
-                {
-                    id: '3',
-                    name: 'Sam Wilson',
-                    email: 'sam@example.com',
-                    password: 'password123',
-                    skillsOffered: ['Guitar', 'Music Theory', 'Piano'],
-                    skillsWanted: ['Web Design', 'Marketing'],
-                    location: 'Chicago, USA',
-                    bio: 'Professional musician looking to build a website for my music.',
-                    availability: 'flexible',
-                    rating: 4.5,
-                    swapsCompleted: 5
-                }
-            ];
-            
-            users = demoUsers;
-            saveUsers();
-        }
-
-        // Update UI when user logs in
-        function updateUIForLoggedInUser() {
-            loginBtn.classList.add('hidden');
-            registerBtn.classList.add('hidden');
-            profileBtn.classList.remove('hidden');
-            dashboardBtn.classList.remove('hidden');
-            logoutBtn.classList.remove('hidden');
-            
-            loginForm.classList.add('hidden');
-            registerForm.classList.add('hidden');
-        }
-
-        // Show dashboard
-        function showDashboard() {
-            dashboardSection.classList.remove('hidden');
-            profileSection.classList.add('hidden');
-            browseSection.classList.add('hidden');
-            
+    // Initialize the app
+    function init() {
+        // Check if user is already logged in
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        if (loggedInUserId) {
+            currentUser = users.find(u => u.id === loggedInUserId);
             if (currentUser) {
-                document.getElementById('completedSwaps').textContent = currentUser.swapsCompleted || 0;
-                document.getElementById('connectionsCount').textContent = currentUser.connections ? currentUser.connections.length : 0;
-                document.getElementById('userRating').textContent = currentUser.rating ? currentUser.rating.toFixed(1) : '5.0';
-            }
-        }
-
-        // Show profile
-        function showProfile() {
-            profileSection.classList.remove('hidden');
-            dashboardSection.classList.add('hidden');
-            browseSection.classList.add('hidden');
-            
-            if (currentUser) {
-                loadProfile();
-            }
-        }
-
-        // Show browse
-        function showBrowse() {
-            browseSection.classList.remove('hidden');
-            dashboardSection.classList.add('hidden');
-            profileSection.classList.add('hidden');
-            
-            loadUsers();
-        }
-
-        // Load profile data
-        function loadProfile() {
-            document.getElementById('profileName').textContent = currentUser.name;
-            document.getElementById('profileAvatar').textContent = getInitials(currentUser.name);
-            document.getElementById('profileLocation').textContent = currentUser.location || 'Not specified';
-            document.getElementById('profileBio').value = currentUser.bio || '';
-            document.getElementById('swapCount').textContent = currentUser.swapsCompleted || 0;
-            document.getElementById('ratingValue').textContent = currentUser.rating ? currentUser.rating.toFixed(1) : '5.0';
-            
-            // Load skills
-            const offeredSkillsList = document.getElementById('offeredSkillsList');
-            offeredSkillsList.innerHTML = '';
-            if (currentUser.skillsOffered && currentUser.skillsOffered.length > 0) {
-                currentUser.skillsOffered.forEach(skill => {
-                    const tag = document.createElement('span');
-                    tag.className = 'tag';
-                    tag.textContent = skill;
-                    offeredSkillsList.appendChild(tag);
-                });
-            } else {
-                offeredSkillsList.innerHTML = '<p>No skills added yet.</p>';
-            }
-            
-            const wantedSkillsList = document.getElementById('wantedSkillsList');
-            wantedSkillsList.innerHTML = '';
-            if (currentUser.skillsWanted && currentUser.skillsWanted.length > 0) {
-                currentUser.skillsWanted.forEach(skill => {
-                    const tag = document.createElement('span');
-                    tag.className = 'tag';
-                    tag.textContent = skill;
-                    wantedSkillsList.appendChild(tag);
-                });
-            } else {
-                wantedSkillsList.innerHTML = '<p>No skills added yet.</p>';
-            }
-            
-            // Load edit form data
-            document.getElementById('editName').value = currentUser.name;
-            document.getElementById('editLocation').value = currentUser.location || '';
-            document.getElementById('editBio').value = currentUser.bio || '';
-            document.getElementById('editSkillsOffered').value = currentUser.skillsOffered ? currentUser.skillsOffered.join(', ') : '';
-            document.getElementById('editSkillsWanted').value = currentUser.skillsWanted ? currentUser.skillsWanted.join(', ') : '';
-            document.getElementById('editAvailability').value = currentUser.availability || 'flexible';
-        }
-
-        // Get initials from name
-        function getInitials(name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase();
-        }
-
-        // Load users for browse section
-        function loadUsers(searchTerm = '') {
-            const userList = document.getElementById('userList');
-            userList.innerHTML = '';
-            
-            const skillFilter = document.getElementById('skillFilter').value;
-            const locationFilter = document.getElementById('locationFilter').value;
-            const availabilityFilter = document.getElementById('availabilityFilter').value;
-            
-            const filteredUsers = users.filter(user => {
-                if (user.id === currentUser?.id) return false;
-                
-                // Search term filter
-                if (searchTerm) {
-                    const term = searchTerm.toLowerCase();
-                    const matches = (
-                        (user.skillsOffered && user.skillsOffered.some(skill => skill.toLowerCase().includes(term))) ||
-                        (user.skillsWanted && user.skillsWanted.some(skill => skill.toLowerCase().includes(term))) ||
-                        user.name.toLowerCase().includes(term) ||
-                        (user.location && user.location.toLowerCase().includes(term)) ||
-                        (user.bio && user.bio.toLowerCase().includes(term));
-                    
-                    if (!matches) return false;
-                }
-                
-                // Skill filter
-                if (skillFilter) {
-                    if (skillFilter === 'design' && 
-                        !(user.skillsOffered && user.skillsOffered.some(skill => ['Design', 'Graphic Design', 'Web Design', 'Photography'].includes(skill)))) {
-                        return false;
-                    }
-                    // Add other skill filters similarly
-                }
-                
-                // Location filter
-                if (locationFilter === 'local' && user.location !== currentUser.location) {
-                    return false;
-                }
-                if (locationFilter === 'online' && user.location) {
-                    return false;
-                }
-                
-                // Availability filter
-                if (availabilityFilter && user.availability !== availabilityFilter) {
-                    return false;
-                }
-                
-                return true;
-            });
-            
-            if (filteredUsers.length === 0) {
-                userList.innerHTML = '<p>No users found matching your criteria.</p>';
-                return;
-            }
-            
-            filteredUsers.forEach(user => {
-                const userCard = document.createElement('div');
-                userCard.className = 'user-card';
-                
-                const offeredSkills = user.skillsOffered ? user.skillsOffered.slice(0, 3).join(', ') : '';
-                const wantedSkills = user.skillsWanted ? user.skillsWanted.slice(0, 3).join(', ') : '';
-                
-                userCard.innerHTML = `
-                    <div class="user-card-header">
-                        <div class="user-avatar">${getInitials(user.name)}</div>
-                        <div>
-                            <h3>${user.name}</h3>
-                            <p>${user.availability || 'Flexible'} availability</p>
-                        </div>
-                    </div>
-                    <div class="user-card-body">
-                        <div class="user-location">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>${user.location || 'Location not specified'}</span>
-                        </div>
-                        <div class="user-skills">
-                            <h4><i class="fas fa-check-circle"></i> Offers</h4>
-                            <p>${offeredSkills}</p>
-                        </div>
-                        <div class="user-skills">
-                            <h4><i class="fas fa-search"></i> Wants</h4>
-                            <p>${wantedSkills}</p>
-                        </div>
-                        <div class="user-actions">
-                            <button class="btn" onclick="messageUser('${user.id}')"><i class="fas fa-envelope"></i> Message</button>
-                            <button class="btn btn-accent" onclick="requestSwap('${user.id}')"><i class="fas fa-handshake"></i> Swap</button>
-                        </div>
-                    </div>
-                `;
-                userList.appendChild(userCard);
-            });
-        }
-
-        // Login function
-        function login() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            const user = users.find(u => u.email === email && u.password === password);
-            
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('loggedInUserId', user.id);
                 updateUIForLoggedInUser();
-                showDashboard();
-                
-                // Clear forms
-                document.getElementById('loginEmail').value = '';
-                document.getElementById('loginPassword').value = '';
-            } else {
-                alert('Invalid email or password');
+                showDashboard(); // Default to dashboard after login
             }
         }
+        
+        // Set up demo data if no users exist
+        if (users.length === 0) {
+            setupDemoData();
+        }
+    }
 
-        // Register function
-        function register() {
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            
-            if (!name || !email || !password) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            if (users.some(u => u.email === email)) {
-                alert('Email already registered');
-                return;
-            }
-            
-            const newUser = {
-                id: Date.now().toString(),
-                name,
-                email,
-                password,
-                skillsOffered: [],
-                skillsWanted: [],
-                location: '',
-                bio: '',
+    // Set up some demo users
+    function setupDemoData() {
+        const demoUsers = [
+            {
+                id: '1',
+                name: 'Alex Johnson',
+                email: 'alex@example.com',
+                password: 'password123',
+                skillsOffered: ['Web Design', 'JavaScript', 'SEO'],
+                skillsWanted: ['Guitar', 'Spanish'],
+                location: 'New York, USA',
+                bio: 'Web developer looking to learn guitar and improve my Spanish.',
+                availability: 'weekends',
+                rating: 4.7,
+                swapsCompleted: 8
+            },
+            {
+                id: '2',
+                name: 'Maria Garcia',
+                email: 'maria@example.com',
+                password: 'password123',
+                skillsOffered: ['Spanish', 'Cooking', 'Yoga'],
+                skillsWanted: ['Graphic Design', 'Photography'],
+                location: 'Miami, USA',
+                bio: 'Native Spanish speaker and yoga instructor. Love to cook!',
+                availability: 'evenings',
+                rating: 4.9,
+                swapsCompleted: 12
+            },
+            {
+                id: '3',
+                name: 'Sam Wilson',
+                email: 'sam@example.com',
+                password: 'password123',
+                skillsOffered: ['Guitar', 'Music Theory', 'Piano'],
+                skillsWanted: ['Web Design', 'Marketing'],
+                location: 'Chicago, USA',
+                bio: 'Professional musician looking to build a website for my music.',
                 availability: 'flexible',
-                rating: 5.0,
-                swapsCompleted: 0,
-                connections: []
-            };
+                rating: 4.5,
+                swapsCompleted: 5
+            }
+        ];
+        
+        users = demoUsers;
+        saveUsers();
+    }
+
+    // Update UI when user logs in
+    function updateUIForLoggedInUser() {
+        loginBtn.classList.add('hidden');
+        registerBtn.classList.add('hidden');
+        profileBtn.classList.remove('hidden');
+        dashboardBtn.classList.remove('hidden');
+        logoutBtn.classList.remove('hidden');
+        
+        loginForm.classList.add('hidden');
+        registerForm.classList.add('hidden');
+    }
+
+    // Show dashboard
+    function showDashboard() {
+        dashboardSection.classList.remove('hidden');
+        profileSection.classList.add('hidden');
+        browseSection.classList.add('hidden');
+        
+        if (currentUser) {
+            document.getElementById('completedSwaps').textContent = currentUser.swapsCompleted || 0;
+            document.getElementById('connectionsCount').textContent = currentUser.connections ? currentUser.connections.length : 0;
+            document.getElementById('userRating').textContent = currentUser.rating ? currentUser.rating.toFixed(1) : '5.0';
+        }
+    }
+
+    // Show profile
+    function showProfile() {
+        profileSection.classList.remove('hidden');
+        dashboardSection.classList.add('hidden');
+        browseSection.classList.add('hidden');
+        
+        if (currentUser) {
+            loadProfile();
+        }
+    }
+
+    // Show browse
+    function showBrowse() {
+        browseSection.classList.remove('hidden');
+        dashboardSection.classList.add('hidden');
+        profileSection.classList.add('hidden');
+        
+        loadUsers();
+    }
+
+    // Load profile data
+    function loadProfile() {
+        document.getElementById('profileName').textContent = currentUser.name;
+        document.getElementById('profileAvatar').textContent = getInitials(currentUser.name);
+        document.getElementById('profileLocation').textContent = currentUser.location || 'Not specified';
+        document.getElementById('profileBio').value = currentUser.bio || '';
+        document.getElementById('swapCount').textContent = currentUser.swapsCompleted || 0;
+        document.getElementById('ratingValue').textContent = currentUser.rating ? currentUser.rating.toFixed(1) : '5.0';
+        
+        // Load skills
+        const offeredSkillsList = document.getElementById('offeredSkillsList');
+        offeredSkillsList.innerHTML = '';
+        if (currentUser.skillsOffered && currentUser.skillsOffered.length > 0) {
+            currentUser.skillsOffered.forEach(skill => {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.textContent = skill;
+                offeredSkillsList.appendChild(tag);
+            });
+        } else {
+            offeredSkillsList.innerHTML = '<p>No skills added yet.</p>';
+        }
+        
+        const wantedSkillsList = document.getElementById('wantedSkillsList');
+        wantedSkillsList.innerHTML = '';
+        if (currentUser.skillsWanted && currentUser.skillsWanted.length > 0) {
+            currentUser.skillsWanted.forEach(skill => {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.textContent = skill;
+                wantedSkillsList.appendChild(tag);
+            });
+        } else {
+            wantedSkillsList.innerHTML = '<p>No skills added yet.</p>';
+        }
+        
+        // Load edit form data
+        document.getElementById('editName').value = currentUser.name;
+        document.getElementById('editLocation').value = currentUser.location || '';
+        document.getElementById('editBio').value = currentUser.bio || '';
+        document.getElementById('editSkillsOffered').value = currentUser.skillsOffered ? currentUser.skillsOffered.join(', ') : '';
+        document.getElementById('editSkillsWanted').value = currentUser.skillsWanted ? currentUser.skillsWanted.join(', ') : '';
+        document.getElementById('editAvailability').value = currentUser.availability || 'flexible';
+    }
+
+    // Get initials from name
+    function getInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    }
+
+    // Load users for browse section
+    function loadUsers(searchTerm = '') {
+        const userList = document.getElementById('userList');
+        userList.innerHTML = '';
+        
+        const skillFilter = document.getElementById('skillFilter').value;
+        const locationFilter = document.getElementById('locationFilter').value;
+        const availabilityFilter = document.getElementById('availabilityFilter').value;
+        
+        const filteredUsers = users.filter(user => {
+            if (user.id === currentUser?.id) return false;
             
-            users.push(newUser);
-            saveUsers();
+            // Search term filter
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                const matches = (
+                    (user.skillsOffered && user.skillsOffered.some(skill => skill.toLowerCase().includes(term))) ||
+                    (user.skillsWanted && user.skillsWanted.some(skill => skill.toLowerCase().includes(term))) ||
+                    user.name.toLowerCase().includes(term) ||
+                    (user.location && user.location.toLowerCase().includes(term)) ||
+                    (user.bio && user.bio.toLowerCase().includes(term));
+                
+                if (!matches) return false;
+            }
             
-            currentUser = newUser;
-            localStorage.setItem('loggedInUserId', newUser.id);
+            // Skill filter
+            if (skillFilter) {
+                if (skillFilter === 'design' && 
+                    !(user.skillsOffered && user.skillsOffered.some(skill => ['Design', 'Graphic Design', 'Web Design', 'Photography'].includes(skill)))) {
+                    return false;
+                }
+                if (skillFilter === 'language' && 
+                    !(user.skillsOffered && user.skillsOffered.some(skill => ['Spanish', 'English', 'French', 'German'].includes(skill)))) {
+                    return false;
+                }
+                if (skillFilter === 'music' && 
+                    !(user.skillsOffered && user.skillsOffered.some(skill => ['Guitar', 'Piano', 'Music Theory'].includes(skill)))) {
+                    return false;
+                }
+                if (skillFilter === 'tech' && 
+                    !(user.skillsOffered && user.skillsOffered.some(skill => ['Web Design', 'JavaScript', 'Python', 'SEO'].includes(skill)))) {
+                    return false;
+                }
+            }
+            
+            // Location filter
+            if (locationFilter === 'local' && user.location !== currentUser?.location) {
+                return false;
+            }
+            if (locationFilter === 'online' && user.location) {
+                return false;
+            }
+            
+            // Availability filter
+            if (availabilityFilter && user.availability !== availabilityFilter) {
+                return false;
+            }
+            
+            return true;
+        });
+        
+        if (filteredUsers.length === 0) {
+            userList.innerHTML = '<p>No users found matching your criteria.</p>';
+            return;
+        }
+        
+        filteredUsers.forEach(user => {
+            const userCard = document.createElement('div');
+            userCard.className = 'user-card';
+            
+            const offeredSkills = user.skillsOffered ? user.skillsOffered.slice(0, 3).join(', ') : '';
+            const wantedSkills = user.skillsWanted ? user.skillsWanted.slice(0, 3).join(', ') : '';
+            
+            userCard.innerHTML = `
+                <div class="user-card-header">
+                    <div class="user-avatar">${getInitials(user.name)}</div>
+                    <div>
+                        <h3>${user.name}</h3>
+                        <p>${user.availability || 'Flexible'} availability</p>
+                    </div>
+                </div>
+                <div class="user-card-body">
+                    <div class="user-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>${user.location || 'Location not specified'}</span>
+                    </div>
+                    <div class="user-skills">
+                        <h4><i class="fas fa-check-circle"></i> Offers</h4>
+                        <p>${offeredSkills}</p>
+                    </div>
+                    <div class="user-skills">
+                        <h4><i class="fas fa-search"></i> Wants</h4>
+                        <p>${wantedSkills}</p>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn" onclick="messageUser('${user.id}')"><i class="fas fa-envelope"></i> Message</button>
+                        <button class="btn btn-accent" onclick="requestSwap('${user.id}')"><i class="fas fa-handshake"></i> Swap</button>
+                    </div>
+                </div>
+            `;
+            userList.appendChild(userCard);
+        });
+    }
+
+    // Login function
+    function login() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        const user = users.find(u => u.email === email && u.password === password);
+        
+        if (user) {
+            currentUser = user;
+            localStorage.setItem('loggedInUserId', user.id);
             updateUIForLoggedInUser();
-            showProfile(); // Show profile after registration to set up details
+            showDashboard();
             
             // Clear forms
-            document.getElementById('registerName').value = '';
-            document.getElementById('registerEmail').value = '';
-            document.getElementById('registerPassword').value = '';
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        } else {
+            alert('Invalid email or password');
         }
+    }
 
-        // Logout function
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('loggedInUserId');
-            
-            loginBtn.classList.remove('hidden');
-            registerBtn.classList.remove('hidden');
-            profileBtn.classList.add('hidden');
-            dashboardBtn.classList.add('hidden');
-            logoutBtn.classList.add('hidden');
-            
-            profileSection.classList.add('hidden');
-            browseSection.classList.add('hidden');
-            dashboardSection.classList.add('hidden');
-            
-            // Show auth section
-            loginForm.classList.add('hidden');
-            registerForm.classList.add('hidden');
+    // Register function
+    function register() {
+        const name = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        
+        if (!name || !email || !password) {
+            alert('Please fill in all fields');
+            return;
         }
+        
+        if (users.some(u => u.email === email)) {
+            alert('Email already registered');
+            return;
+        }
+        
+        const newUser = {
+            id: Date.now().toString(),
+            name,
+            email,
+            password,
+            skillsOffered: [],
+            skillsWanted: [],
+            location: '',
+            bio: '',
+            availability: 'flexible',
+            rating: 5.0,
+            swapsCompleted: 0,
+            connections: []
+        };
+        
+        users.push(newUser);
+        saveUsers();
+        
+        currentUser = newUser;
+        localStorage.setItem('loggedInUserId', newUser.id);
+        updateUIForLoggedInUser();
+        showProfile(); // Show profile after registration to set up details
+        
+        // Clear forms
+        document.getElementById('registerName').value = '';
+        document.getElementById('registerEmail').value = '';
+        document.getElementById('registerPassword').value = '';
+    }
 
-        // Save profile function
-        function saveProfile() {
-            if (!currentUser) return;
-            
-            currentUser.name = document.getElementById('editName').value;
-            currentUser.location = document.getElementById('editLocation').value;
-            currentUser.bio = document.getElementById('editBio').value;
-            currentUser.skillsOffered = document.getElementById('editSkillsOffered').value
-                .split(',')
-                .map(s => s.trim())
-                .filter(s => s);
-            currentUser.skillsWanted = document.getElementById('editSkillsWanted').value
-                    saveUsers();
+    // Logout function
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('loggedInUserId');
+        
+        loginBtn.classList.remove('hidden');
+        registerBtn.classList.remove('hidden');
+        profileBtn.classList.add('hidden');
+        dashboardBtn.classList.add('hidden');
+        logoutBtn.classList.add('hidden');
+        
+        profileSection.classList.add('hidden');
+        browseSection.classList.add('hidden');
+        dashboardSection.classList.add('hidden');
+        
+        // Show auth section
+        loginForm.classList.add('hidden');
+        registerForm.classList.add('hidden');
+    }
+
+    // Save profile function
+    function saveProfile() {
+        if (!currentUser) return;
+        
+        currentUser.name = document.getElementById('editName').value;
+        currentUser.location = document.getElementById('editLocation').value;
+        currentUser.bio = document.getElementById('editBio').value;
+        currentUser.skillsOffered = document.getElementById('editSkillsOffered').value
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s);
+        currentUser.skillsWanted = document.getElementById('editSkillsWanted').value
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s);
+        currentUser.availability = document.getElementById('editAvailability').value;
+        
+        saveUsers();
         loadProfile();
         viewProfileContent.classList.remove('hidden');
         editProfileContent.classList.add('hidden');
@@ -1185,4 +1201,3 @@
     // Initialize the app
     init();
 </script>
-               
