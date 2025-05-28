@@ -4,11 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkillSwap - Trade Skills, Not Money</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav button {
+            background: white;
+            color: #4CAF50;
+            border: none;
+            padding: 0.5rem 1rem;
+            margin-left: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        main {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            display: block;
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        #userList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .user-card {
+            border: 1px solid #ddd;
+            padding: 1rem;
+            border-radius: 5px;
+        }
+
+        .user-card h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -16,21 +98,21 @@
         <nav>
             <button id="loginBtn">Login</button>
             <button id="registerBtn">Register</button>
-            <button id="profileBtn" style="display:none;">My Profile</button>
-            <button id="logoutBtn" style="display:none;">Logout</button>
+            <button id="profileBtn" class="hidden">My Profile</button>
+            <button id="logoutBtn" class="hidden">Logout</button>
         </nav>
     </header>
 
     <main>
         <section id="authSection">
-            <div id="loginForm" style="display:none;">
+            <div id="loginForm" class="hidden">
                 <h2>Login</h2>
                 <input type="email" id="loginEmail" placeholder="Email">
                 <input type="password" id="loginPassword" placeholder="Password">
                 <button id="submitLogin">Login</button>
             </div>
 
-            <div id="registerForm" style="display:none;">
+            <div id="registerForm" class="hidden">
                 <h2>Register</h2>
                 <input type="text" id="registerName" placeholder="Full Name">
                 <input type="email" id="registerEmail" placeholder="Email">
@@ -39,7 +121,7 @@
             </div>
         </section>
 
-        <section id="profileSection" style="display:none;">
+        <section id="profileSection" class="hidden">
             <h2>My Profile</h2>
             <div>
                 <label>Skills I Offer:</label>
@@ -56,13 +138,220 @@
             <button id="saveProfile">Save Profile</button>
         </section>
 
-        <section id="browseSection" style="display:none;">
+        <section id="browseSection" class="hidden">
             <h2>Find Skill Partners</h2>
             <input type="text" id="searchInput" placeholder="Search skills...">
             <div id="userList"></div>
         </section>
     </main>
 
-    <script src="app.js"></script>
+    <script>
+        // Data storage
+        let users = JSON.parse(localStorage.getItem('skillSwapUsers')) || [];
+        let currentUser = null;
+
+        // DOM Elements
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const profileBtn = document.getElementById('profileBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const profileSection = document.getElementById('profileSection');
+        const browseSection = document.getElementById('browseSection');
+
+        // Check if user is already logged in
+        const loggedInUserId = localStorage.getItem('loggedInUserId');
+        if (loggedInUserId) {
+            currentUser = users.find(u => u.id === loggedInUserId);
+            if (currentUser) {
+                updateUIForLoggedInUser();
+            }
+        }
+
+        // Event Listeners
+        loginBtn.addEventListener('click', () => {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        });
+
+        registerBtn.addEventListener('click', () => {
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+        });
+
+        profileBtn.addEventListener('click', () => {
+            profileSection.classList.remove('hidden');
+            loadProfile();
+        });
+
+        logoutBtn.addEventListener('click', logout);
+
+        document.getElementById('submitLogin').addEventListener('click', login);
+        document.getElementById('submitRegister').addEventListener('click', register);
+        document.getElementById('saveProfile').addEventListener('click', saveProfile);
+        document.getElementById('searchInput').addEventListener('input', searchUsers);
+
+        // Functions
+        function updateUIForLoggedInUser() {
+            loginBtn.classList.add('hidden');
+            registerBtn.classList.add('hidden');
+            profileBtn.classList.remove('hidden');
+            logoutBtn.classList.remove('hidden');
+            
+            loginForm.classList.add('hidden');
+            registerForm.classList.add('hidden');
+            
+            browseSection.classList.remove('hidden');
+            loadUsers();
+        }
+
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('loggedInUserId', user.id);
+                updateUIForLoggedInUser();
+            } else {
+                alert('Invalid email or password');
+            }
+        }
+
+        function register() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            if (users.some(u => u.email === email)) {
+                alert('Email already registered');
+                return;
+            }
+            
+            const newUser = {
+                id: Date.now().toString(),
+                name,
+                email,
+                password,
+                skillsOffered: [],
+                skillsWanted: [],
+                location: ''
+            };
+            
+            users.push(newUser);
+            saveUsers();
+            
+            currentUser = newUser;
+            localStorage.setItem('loggedInUserId', newUser.id);
+            updateUIForLoggedInUser();
+            loadProfile();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('loggedInUserId');
+            
+            loginBtn.classList.remove('hidden');
+            registerBtn.classList.remove('hidden');
+            profileBtn.classList.add('hidden');
+            logoutBtn.classList.add('hidden');
+            
+            profileSection.classList.add('hidden');
+            browseSection.classList.add('hidden');
+            
+            // Clear forms
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+        }
+
+        function loadProfile() {
+            if (!currentUser) return;
+            
+            document.getElementById('skillsOffered').value = currentUser.skillsOffered.join(', ');
+            document.getElementById('skillsWanted').value = currentUser.skillsWanted.join(', ');
+            document.getElementById('userLocation').value = currentUser.location || '';
+        }
+
+        function saveProfile() {
+            if (!currentUser) return;
+            
+            currentUser.skillsOffered = document.getElementById('skillsOffered').value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s);
+            
+            currentUser.skillsWanted = document.getElementById('skillsWanted').value
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s);
+            
+            currentUser.location = document.getElementById('userLocation').value;
+            
+            saveUsers();
+            loadUsers();
+            alert('Profile saved!');
+        }
+
+        function loadUsers(searchTerm = '') {
+            if (!currentUser) return;
+            
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            
+            const filteredUsers = users.filter(user => {
+                if (user.id === currentUser.id) return false;
+                
+                if (searchTerm) {
+                    const term = searchTerm.toLowerCase();
+                    return (
+                        user.skillsOffered.some(skill => skill.toLowerCase().includes(term)) ||
+                        user.skillsWanted.some(skill => skill.toLowerCase().includes(term)) ||
+                        user.name.toLowerCase().includes(term) ||
+                        user.location.toLowerCase().includes(term)
+                    );
+                }
+                
+                return true;
+            });
+            
+            filteredUsers.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <h3>${user.name}</h3>
+                    <p><strong>Offers:</strong> ${user.skillsOffered.join(', ')}</p>
+                    <p><strong>Wants:</strong> ${user.skillsWanted.join(', ')}</p>
+                    <p><strong>Location:</strong> ${user.location}</p>
+                    <button onclick="showMessageDialog('${user.id}')">Message</button>
+                `;
+                userList.appendChild(userCard);
+            });
+        }
+
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchInput').value;
+            loadUsers(searchTerm);
+        }
+
+        function showMessageDialog(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                alert(`Messaging feature would send a message to ${user.name}. In a real app, this would open a chat dialog.`);
+            }
+        }
+
+        function saveUsers() {
+            localStorage.setItem('skillSwapUsers', JSON.stringify(users));
+        }
+
+        // Make functions available globally for button onclick handlers
+        window.showMessageDialog = showMessageDialog;
+    </script>
 </body>
 </html>
