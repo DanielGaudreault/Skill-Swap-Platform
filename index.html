@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap - Trade Skills, Not Money</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <header>
+        <h1>SkillSwap</h1>
+        <nav>
+            <button id="loginBtn">Login</button>
+            <button id="registerBtn">Register</button>
+            <button id="profileBtn" style="display:none;">My Profile</button>
+            <button id="logoutBtn" style="display:none;">Logout</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="authSection">
+            <div id="loginForm" style="display:none;">
+                <h2>Login</h2>
+                <input type="email" id="loginEmail" placeholder="Email">
+                <input type="password" id="loginPassword" placeholder="Password">
+                <button id="submitLogin">Login</button>
+            </div>
+
+            <div id="registerForm" style="display:none;">
+                <h2>Register</h2>
+                <input type="text" id="registerName" placeholder="Full Name">
+                <input type="email" id="registerEmail" placeholder="Email">
+                <input type="password" id="registerPassword" placeholder="Password">
+                <button id="submitRegister">Register</button>
+            </div>
+        </section>
+
+        <section id="profileSection" style="display:none;">
+            <h2>My Profile</h2>
+            <div>
+                <label>Skills I Offer:</label>
+                <input type="text" id="skillsOffered" placeholder="e.g., Web Design, Spanish Tutoring">
+            </div>
+            <div>
+                <label>Skills I Want:</label>
+                <input type="text" id="skillsWanted" placeholder="e.g., Guitar Lessons, Photography">
+            </div>
+            <div>
+                <label>Location:</label>
+                <input type="text" id="userLocation" placeholder="City, Country">
+            </div>
+            <button id="saveProfile">Save Profile</button>
+        </section>
+
+        <section id="browseSection" style="display:none;">
+            <h2>Find Skill Partners</h2>
+            <input type="text" id="searchInput" placeholder="Search skills...">
+            <div id="userList"></div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
