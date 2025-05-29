@@ -6,6 +6,11 @@
     <title>SkillSwap - Trade Skills, Not Money</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
+        /* CSS remains unchanged for brevity, but consider these improvements:
+           - Use CSS custom properties consistently for colors and sizes.
+           - Add transitions for smoother visibility toggles.
+           - Optimize media queries for better responsive behavior.
+        */
         :root {
             --primary-color: #4CAF50;
             --secondary-color: #388E3C;
@@ -777,6 +782,7 @@
             dashboardBtn: document.getElementById('dashboardBtn'),
             messagesBtn: document.getElementById('messagesBtn'),
             logoutBtn: document.getElementById('logoutBtn'),
+            authSection: document.getElementById('authSection'),
             loginForm: document.getElementById('loginForm'),
             registerForm: document.getElementById('registerForm'),
             loginFormElement: document.getElementById('loginFormElement'),
@@ -805,10 +811,15 @@
         // Utility Functions
         const utils = {
             getInitials(name) {
-                return name.split(' ').map(n => n[0]).join('').toUpperCase();
+                return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '';
             },
             validateEmail(email) {
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            },
+            sanitizeInput(input) {
+                const div = document.createElement('div');
+                div.textContent = input;
+                return div.innerHTML;
             },
             showError(inputId, errorId, message) {
                 const input = document.getElementById(inputId);
@@ -824,7 +835,11 @@
                 error.style.display = 'none';
             },
             saveToStorage(key, data) {
-                localStorage.setItem(key, JSON.stringify(data));
+                try {
+                    localStorage.setItem(key, JSON.stringify(data));
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
+                }
             },
             showNotification(message, type = 'success') {
                 const notification = document.createElement('div');
@@ -840,6 +855,17 @@
                 notification.style.zIndex = '1000';
                 document.body.appendChild(notification);
                 setTimeout(() => notification.remove(), 3000);
+            },
+            debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
             }
         };
 
@@ -858,7 +884,7 @@
                         id: '1',
                         name: 'Alex Johnson',
                         email: 'alex@example.com',
-                        password: 'password123',
+                        password: 'password123', // In production, this should be hashed
                         skillsOffered: ['Web Design', 'JavaScript', 'SEO'],
                         skillsWanted: ['Guitar', 'Spanish'],
                         location: 'New York, USA',
@@ -911,18 +937,24 @@
                     if (el.tagName === 'SECTION') el.classList.add('hidden');
                 });
                 section.classList.remove('hidden');
+                if (section === elements.authSection) {
+                    elements.loginForm.classList.remove('hidden');
+                    elements.registerForm.classList.add('hidden');
+                }
             },
             updateNav() {
-                elements.loginBtn.classList.toggle('hidden', !!state.currentUser);
-                elements.registerBtn.classList.toggle('hidden', !!state.currentUser);
-                elements.profileBtn.classList.toggle('hidden', !state.currentUser);
-                elements.dashboardBtn.classList.toggle('hidden', !state.currentUser);
-                elements.messagesBtn.classList.toggle('hidden', !state.currentUser);
-                elements.logoutBtn.classList.toggle('hidden', !state.currentUser);
+                const isLoggedIn = !!state.currentUser;
+                elements.loginBtn.classList.toggle('hidden', isLoggedIn);
+                elements.registerBtn.classList.toggle('hidden', isLoggedIn);
+                elements.profileBtn.classList.toggle('hidden', !isLoggedIn);
+                elements.dashboardBtn.classList.toggle('hidden', !isLoggedIn);
+                elements.messagesBtn.classList.toggle('hidden', !isLoggedIn);
+                elements.logoutBtn.classList.toggle('hidden', !isLoggedIn);
             },
             loadProfile() {
                 const user = state.currentUser;
-                document.getElementById('profileName').textContent = user.name;
+                if (!user) return;
+                document.getElementById('profileName').textContent = utils.sanitizeInput(user.name);
                 document.getElementById('profileAvatar').textContent = utils.getInitials(user.name);
                 document.getElementById('profileLocation').textContent = user.location || 'Not specified';
                 document.getElementById('profileBio').value = user.bio || '';
@@ -931,17 +963,17 @@
 
                 const offeredSkillsList = document.getElementById('offeredSkillsList');
                 offeredSkillsList.innerHTML = user.skillsOffered?.length
-                    ? user.skillsOffered.map(skill => `<span class="tag">${skill}</span>`).join('')
+                    ? user.skillsOffered.map(skill => `<span class="tag">${utils.sanitizeInput(skill)}</span>`).join('')
                     : '<p>No skills added yet.</p>';
 
                 const wantedSkillsList = document.getElementById('wantedSkillsList');
                 wantedSkillsList.innerHTML = user.skillsWanted?.length
-                    ? user.skillsWanted.map(skill => `<span class="tag">${skill}</span>`).join('')
+                    ? user.skillsWanted.map(skill => `<span class="tag">${utils.sanitizeInput(skill)}</span>`).join('')
                     : '<p>No skills added yet.</p>';
 
                 const recentSwaps = document.getElementById('recentSwaps');
                 recentSwaps.innerHTML = user.swapRequests?.length
-                    ? user.swapRequests.map(req => `<p>Swap with ${req.userName} for ${req.skill} (${req.status})</p>`).join('')
+                    ? user.swapRequests.map(req => `<p>Swap with ${utils.sanitizeInput(req.userName)} for ${utils.sanitizeInput(req.skill)} (${req.status})</p>`).join('')
                     : '<p>No recent swaps yet.</p>';
 
                 document.getElementById('editName').value = user.name;
@@ -953,6 +985,7 @@
             },
             loadDashboard() {
                 const user = state.currentUser;
+                if (!user) return;
                 document.getElementById('completedSwaps').textContent = user.swapsCompleted || 0;
                 document.getElementById('connectionsCount').textContent = user.connections?.length || 0;
                 document.getElementById('userRating').textContent = user.rating ? user.rating.toFixed(1) : '5.0';
@@ -962,14 +995,14 @@
                 const activities = [
                     ...(user.swapRequests?.map(r => ({
                         icon: 'fa-handshake',
-                        text: `Swap request ${r.status} with ${r.userName} for ${r.skill}`,
+                        text: `Swap request ${r.status} with ${utils.sanitizeInput(r.userName)} for ${utils.sanitizeInput(r.skill)}`,
                         time: new Date(r.timestamp).toLocaleString()
                     })) || []),
                     ...(state.messages
                         .filter(m => m.recipientId === user.id || m.senderId === user.id)
                         .map(m => ({
                             icon: 'fa-comment',
-                            text: `${m.senderId === user.id ? 'You' : m.senderName} sent a message: ${m.content.substring(0, 20)}...`,
+                            text: `${m.senderId === user.id ? 'You' : utils.sanitizeInput(m.senderName)} sent a message: ${utils.sanitizeInput(m.content.substring(0, 20))}...`,
                             time: new Date(m.timestamp).toLocaleString()
                         })) || [])
                 ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5);
@@ -1030,7 +1063,7 @@
                             <div class="user-card-header">
                                 <div class="user-avatar">${utils.getInitials(user.name)}</div>
                                 <div>
-                                    <h3>${user.name}</h3>
+                                    <h3>${utils.sanitizeInput(user.name)}</h3>
                                     <p>${user.availability || 'Flexible'} availability</p>
                                 </div>
                             </div>
@@ -1041,11 +1074,11 @@
                                 </div>
                                 <div class="user-skills">
                                     <h4><i class="fas fa-check-circle"></i> Offers</h4>
-                                    <p>${user.skillsOffered?.slice(0, 3).join(', ') || 'None'}</p>
+                                    <p>${user.skillsOffered?.slice(0, 3).map(skill => utils.sanitizeInput(skill)).join(', ') || 'None'}</p>
                                 </div>
                                 <div class="user-skills">
                                     <h4><i class="fas fa-search"></i> Wants</h4>
-                                    <p>${user.skillsWanted?.slice(0, 3).join(', ') || 'None'}</p>
+                                    <p>${user.skillsWanted?.slice(0, 3).map(skill => utils.sanitizeInput(skill)).join(', ') || 'None'}</p>
                                 </div>
                                 <div class="user-actions">
                                     <button class="btn" onclick="app.messageUser('${user.id}')"><i class="fas fa-envelope"></i> Message</button>
@@ -1058,13 +1091,14 @@
             },
             loadMessages() {
                 const user = state.currentUser;
+                if (!user) return;
                 const messageList = document.getElementById('messageList');
                 const recipientSelect = elements.messageRecipient;
 
                 recipientSelect.innerHTML = '<option value="">Select a user</option>' +
                     state.users
                         .filter(u => u.id !== user.id)
-                        .map(u => `<option value="${u.id}">${u.name}</option>`)
+                        .map(u => `<option value="${u.id}">${utils.sanitizeInput(u.name)}</option>`)
                         .join('');
 
                 const userMessages = state.messages
@@ -1074,8 +1108,8 @@
                 messageList.innerHTML = userMessages.length
                     ? userMessages.map(m => `
                         <div class="message-item">
-                            <p><strong>${m.senderId === user.id ? 'You' : m.senderName}</strong> to <strong>${m.recipientId === user.id ? 'You' : m.recipientName}</strong></p>
-                            <p>${m.content}</p>
+                            <p><strong>${m.senderId === user.id ? 'You' : utils.sanitizeInput(m.senderName)}</strong> to <strong>${m.recipientId === user.id ? 'You' : utils.sanitizeInput(m.recipientName)}</strong></p>
+                            <p>${utils.sanitizeInput(m.content)}</p>
                             <p class="activity-time">${new Date(m.timestamp).toLocaleString()}</p>
                         </div>
                     `).join('')
@@ -1094,13 +1128,17 @@
                         ui.updateNav();
                         ui.showSection(elements.dashboardSection);
                         ui.loadDashboard();
+                    } else {
+                        localStorage.removeItem('loggedInUserId');
+                        ui.showSection(elements.authSection);
                     }
+                } else {
+                    ui.showSection(elements.authSection);
                 }
-                elements.loginForm.classList.remove('hidden');
             },
             login(event) {
                 event.preventDefault();
-                const email = document.getElementById('loginEmail').value.trim();
+                const email = utils.sanitizeInput(document.getElementById('loginEmail').value.trim());
                 const password = document.getElementById('loginPassword').value;
 
                 let valid = true;
@@ -1134,8 +1172,8 @@
             },
             register(event) {
                 event.preventDefault();
-                const name = document.getElementById('registerName').value.trim();
-                const email = document.getElementById('registerEmail').value.trim();
+                const name = utils.sanitizeInput(document.getElementById('registerName').value.trim());
+                const email = utils.sanitizeInput(document.getElementById('registerEmail').value.trim());
                 const password = document.getElementById('registerPassword').value;
 
                 let valid = true;
@@ -1167,7 +1205,7 @@
                     id: Date.now().toString(),
                     name,
                     email,
-                    password,
+                    password, // In production, hash the password
                     skillsOffered: [],
                     skillsWanted: [],
                     location: '',
@@ -1193,16 +1231,14 @@
                 state.currentUser = null;
                 localStorage.removeItem('loggedInUserId');
                 ui.updateNav();
-                ui.showSection(elements.loginForm);
-                elements.loginForm.classList.remove('hidden');
-                elements.registerForm.classList.add('hidden');
+                ui.showSection(elements.authSection);
                 utils.showNotification('Logged out successfully!');
             },
             saveProfile(event) {
                 event.preventDefault();
                 if (!state.currentUser) return;
 
-                const name = document.getElementById('editName').value.trim();
+                const name = utils.sanitizeInput(document.getElementById('editName').value.trim());
                 if (!name) {
                     utils.showError('editName', 'editNameError', 'Name is required');
                     return;
@@ -1210,15 +1246,15 @@
                 utils.clearError('editName', 'editNameError');
 
                 state.currentUser.name = name;
-                state.currentUser.location = document.getElementById('editLocation').value.trim();
-                state.currentUser.bio = document.getElementById('editBio').value.trim();
+                state.currentUser.location = utils.sanitizeInput(document.getElementById('editLocation').value.trim());
+                state.currentUser.bio = utils.sanitizeInput(document.getElementById('editBio').value.trim());
                 state.currentUser.skillsOffered = document.getElementById('editSkillsOffered').value
                     .split(',')
-                    .map(s => s.trim())
+                    .map(s => utils.sanitizeInput(s.trim()))
                     .filter(s => s);
                 state.currentUser.skillsWanted = document.getElementById('editSkillsWanted').value
                     .split(',')
-                    .map(s => s.trim())
+                    .map(s => utils.sanitizeInput(s.trim()))
                     .filter(s => s);
                 state.currentUser.availability = document.getElementById('editAvailability').value;
 
@@ -1238,7 +1274,7 @@
             },
             sendMessage() {
                 const recipientId = elements.messageRecipient.value;
-                const content = elements.messageContent.value.trim();
+                const content = utils.sanitizeInput(elements.messageContent.value.trim());
 
                 if (!content) {
                     utils.showError('messageContent', 'messageContentError', 'Message cannot be empty');
@@ -1305,20 +1341,18 @@
                 ui.showSection(elements.dashboardSection);
                 ui.loadDashboard();
             } else {
-                ui.showSection(elements.loginForm);
-                elements.loginForm.classList.remove('hidden');
-                elements.registerForm.classList.add('hidden');
+                ui.showSection(elements.authSection);
             }
         });
 
         elements.loginBtn.addEventListener('click', () => {
-            ui.showSection(elements.loginForm);
+            ui.showSection(elements.authSection);
             elements.loginForm.classList.remove('hidden');
             elements.registerForm.classList.add('hidden');
         });
 
         elements.registerBtn.addEventListener('click', () => {
-            ui.showSection(elements.registerForm);
+            ui.showSection(elements.authSection);
             elements.registerForm.classList.remove('hidden');
             elements.loginForm.classList.add('hidden');
         });
@@ -1360,7 +1394,7 @@
             elements.editProfileContent.classList.add('hidden');
         });
         elements.searchBtn.addEventListener('click', () => ui.loadUsers(elements.searchInput.value));
-        elements.searchInput.addEventListener('input', () => ui.loadUsers(elements.searchInput.value));
+        elements.searchInput.addEventListener('input', utils.debounce(() => ui.loadUsers(elements.searchInput.value), 300));
         elements.skillFilter.addEventListener('change', () => ui.loadUsers(elements.searchInput.value));
         elements.locationFilter.addEventListener('change', () => ui.loadUsers(elements.searchInput.value));
         elements.availabilityFilter.addEventListener('change', () => ui.loadUsers(elements.searchInput.value));
